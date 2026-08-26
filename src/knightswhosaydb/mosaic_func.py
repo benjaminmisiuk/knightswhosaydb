@@ -10,6 +10,8 @@ import rasterio.warp
 from rasterio.merge import merge
 from pathlib import Path
 
+from .avg_func import AVG
+
 def mosaic(
     dir_path,
     format, #'fmgt' or 'kmall'
@@ -58,8 +60,10 @@ def mosaic(
     for k, file_k in enumerate(files):
         print(f"Processing file {k+1} of {len(files)}: {os.path.basename(file_k)}")
         if format == 'kmall':
+            from .kmall_func import read_kmall
             f = read_kmall(file_k, index, **kwargs)
         elif format == 'fmgt':
+            from .fmgy_func import read_fmgt
             f = read_fmgt(file_k, **kwargs)
 
         if is_bathy:
