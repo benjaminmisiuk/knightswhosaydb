@@ -49,6 +49,7 @@ python = ">=3.12"
 hatchling = "*"
 pip = ">=26.0.1,<27"
 pytest = ">=9.0.3,<10"
+nbmake = ">=1.5.5,<2"
 
 # [tool.pixi.tasks]
 # test = "pytest tests/"
@@ -63,6 +64,8 @@ rattler-build = "*"
 build-pypi = "python -m build"
 upload-pypi = { cmd = "twine upload dist/*", depends-on = ["build-pypi"] }
 build-conda = "rattler-build build --recipe recipe/recipe.yaml --output output"
+#test_notebooks = "python test_notebooks.py"
+clean_notebooks = "python misc/clean_notebooks.py"
 
 [tool.pixi.environments]
 default = { solve-group = "default" }
