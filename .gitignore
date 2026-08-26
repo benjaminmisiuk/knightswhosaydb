@@ -183,3 +183,4 @@ cython_debug/
 *.tmtgp.index
 *.tif
 *.tiff.aux.xml
+*.tif.aux.xml
