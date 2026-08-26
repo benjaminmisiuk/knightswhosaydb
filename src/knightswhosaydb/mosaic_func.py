@@ -95,8 +95,8 @@ def mosaic(
                 'transform': rasterio.transform.from_bounds(
                     west=a['xmin'],
                     south=a['ymin'],
-                    east=a['xmin'] + line_arr.shape[1],
-                    north=a['ymin'] + line_arr.shape[0],
+                    east=a['xmin'] + (line_arr.shape[1]*a[res_x]),
+                    north=a['ymin'] + (line_arr.shape[0]*a[res_y]),
                     width=line_arr.shape[1],
                     height=line_arr.shape[0]
                 )
