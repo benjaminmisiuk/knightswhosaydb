@@ -4,11 +4,11 @@ import pandas as pd
 from tqdm.auto import tqdm
 
 
-def read_kmall(file, index, back_mode = 'bs1', **kwargs):
-    fh = theping.echosounders.kmall.KMALLFileHandler(file, index)
+def read_kmall(file, index, back_mode = 'bs1', verbose=False, **kwargs):
+    fh = theping.echosounders.kmall.KMALLFileHandler(file, index, show_progress=verbose)
     pings = theping.pingprocessing.filter_pings.by_features(fh.get_pings(), ['bottom.xyz'])
     northing, easting, depth, bs, beam_angle, beam_numbers, ping_numbers, incidence_angle, frequency = [], [], [], [], [], [], [], [], []
-    for pn, ping in enumerate(tqdm(pings)):
+    for pn, ping in enumerate(tqdm(pings, delay=10, desc=f"Reading {file}")):
         c = ping.get_sensor_configuration()
         s = ping.get_sensor_data_latlon()
         s = theping.navigation.datastructures.SensordataUTM(s)
