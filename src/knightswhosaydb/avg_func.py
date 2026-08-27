@@ -109,28 +109,7 @@ def compute_avg(
         
     return avg
 
-def AVG(bs_line,
-        template_path = None,
-        bounds = None, #[xmin, xmax, ymin, ymax]
-        filter_across = False,
-        filter_along = False,
-        save_raw = False,
-        save_bathy = False,
-        q_along = 0.01,
-        q_across = 0.01,
-        res = 1.0,
-        w = 300,
-        angle_intv = 5,
-        ref = 40,
-        frequency = None,
-        back_filter = [-80, 20],
-        method = 'dual',
-        apply_avg = True):
-
-    #check that bs_line has the proper columns
-    if not {'east', 'north', 'depth', 'back', 'ping_no', 'angle'}.issubset(bs_line.columns):
-        sys.exit("Missing columns in bs_line DataFrame. Required columns: 'east', 'north', 'depth', 'back', 'ping_no', 'angle'")
-
+def rasterize_avg(avg, template_path=None, bounds=None, res=1.0, save_raw=False, save_bathy=False):
     #read a template raster with desired extent and resolution
     if template_path is not None:
         import rasterio
@@ -150,8 +129,8 @@ def AVG(bs_line,
             height = int(np.ceil((ymax - ymin) / res))
             res_x, res_y = res, res
         else:
-            xmin, xmax = bs_line['east'].min(), bs_line['east'].max()
-            ymin, ymax = bs_line['north'].min(), bs_line['north'].max()
+            xmin, xmax = avg['east'].min(), avg['east'].max()
+            ymin, ymax = avg['north'].min(), avg['north'].max()
             width = int(np.ceil((xmax - xmin) / res))
             height = int(np.ceil((ymax - ymin) / res))
             res_x, res_y = res, res
@@ -159,25 +138,6 @@ def AVG(bs_line,
     #determine raster extent
     x_edges = np.linspace(xmin, xmax, width + 1)
     y_edges = np.linspace(ymin, ymax, height + 1)
-
-    avg = compute_avg(
-                bs_line,
-                filter_across = filter_across,
-                filter_along = filter_along,
-                q_along = q_along,
-                q_across = q_across,
-                w = w,
-                angle_intv = angle_intv,
-                ref = ref,
-                frequency = frequency,
-                back_filter = back_filter,
-                method = method,
-                apply_avg = apply_avg
-                )
-
-    #rasterize
-    def empty_raster_like(width, height, dtype=np.float32):
-        return np.full((height, width), np.nan, dtype=dtype)
 
     output = {
         'raw': None,
@@ -197,7 +157,7 @@ def AVG(bs_line,
 
     if save_raw:
         if avg.empty:
-            arr_raw = empty_raster_like(width, height)
+            arr_raw = np.full((height, width), np.nan, dtype=np.float32)
         else:
             stat_raw, _, _, _ = binned_statistic_2d(
                 x=avg['east'], y=avg['north'], values=avg['back'],
@@ -208,23 +168,66 @@ def AVG(bs_line,
 
     if save_bathy:
         if avg.empty:
-            arr_raw = empty_raster_like(width, height)
+            arr_bathy = np.full((height, width), np.nan, dtype=np.float32)
         else:
-            stat_raw, _, _, _ = binned_statistic_2d(
+            stat_bathy, _, _, _ = binned_statistic_2d(
                 x=avg['east'], y=avg['north'], values=avg['depth'],
                 statistic='mean', bins=[x_edges, y_edges]
             )
-            arr_raw = np.flipud(stat_raw.T).astype(np.float32)
-            output['bathy'] = arr_raw
+            arr_bathy = np.flipud(stat_bathy.T).astype(np.float32)
+            output['bathy'] = arr_bathy
 
     if avg.empty:
-        arr_avg = empty_raster_like(width, height)
+        arr_avg = np.full((height, width), np.nan, dtype=np.float32)
     else:
         stat_avg, _, _, _ = binned_statistic_2d(
             x=avg['east'], y=avg['north'], values=avg['back_avg'],
             statistic='median', bins=[x_edges, y_edges]
         )
         arr_avg = np.flipud(stat_avg.T).astype(np.float32)
-        output['back'] = arr_avg
+        output['back'] = arr_avg    
 
     return output
+
+def AVG(bs_line,
+        template_path = None,
+        bounds = None, #[xmin, xmax, ymin, ymax]
+        filter_across = False,
+        filter_along = False,
+        save_raw = False,
+        save_bathy = False,
+        q_along = 0.01,
+        q_across = 0.01,
+        res = 1.0,
+        w = 300,
+        angle_intv = 5,
+        ref = 40,
+        frequency = None,
+        back_filter = [-80, 20],
+        method = 'dual',
+        apply_avg = True):
+
+    avg = compute_avg(
+        bs_line,
+        filter_across = filter_across,
+        filter_along = filter_along,
+        q_along = q_along,
+        q_across = q_across,
+        w = w,
+        angle_intv = angle_intv,
+        ref = ref,
+        frequency = frequency,
+        back_filter = back_filter,
+        method = method,
+        apply_avg = apply_avg
+    )
+
+    #rasterize
+    return rasterize_avg(
+        avg,
+        template_path = template_path,
+        bounds = bounds,
+        res = res,
+        save_raw = save_raw,
+        save_bathy = save_bathy
+    )
