@@ -10,7 +10,8 @@ import rasterio.warp
 from rasterio.merge import merge
 from pathlib import Path
 
-from .avg_func import AVG
+from .avg_func import compute_avg
+from .rasterize_func import write_raster, merge_lines, grid_line
 
 def mosaic(
     dir_path,
@@ -26,11 +27,14 @@ def mosaic(
     if layer == 'backscatter':
         is_bathy = False
         var_key = 'back'
+    elif layer == 'raw':
+        is_bathy = False
+        var_key = 'raw'
     elif layer == 'depth':
         is_bathy = True
         var_key = 'bathy'
     else:
-        raise ValueError("Invalid layer. Must be 'backscatter' or 'depth'.")
+        raise ValueError("Invalid layer. Must be 'backscatter', 'depth' or 'raw'.")
 
     prefix = f'line_{var_key}'
 
@@ -67,9 +71,14 @@ def mosaic(
             f = read_fmgt(file_k, **kwargs)
 
         if is_bathy:
-            a = AVG(bs_line=f, template_path=template_path, save_bathy=True, apply_avg=False, **kwargs)
+            avg = compute_avg(bs_line=f, apply_avg=False, **kwargs)
+            a = grid_line(avg, template_path=template_path, save_bathy=True, **kwargs)
+        elif var_key == 'raw':
+            avg = compute_avg(bs_line=f, apply_avg=False, **kwargs)
+            a = grid_line(avg, template_path=template_path, save_raw=True, **kwargs)
         else:
-            a = AVG(bs_line=f, template_path=template_path, **kwargs)
+            avg = compute_avg(bs_line=f, apply_avg=True, **kwargs)
+            a = grid_line(avg, template_path=template_path, save_bathy=False, **kwargs)
 
         #line_arr chooses the bathy or back output from AVG()
         line_arr = a[var_key]
@@ -79,30 +88,7 @@ def mosaic(
             print(f"  No valid data in file {k+1} after filtering (check frequency, back_filter, or other parameters)")
             continue
 
-        if template_path is not None:
-            with rasterio.open(os.path.join(out_lines, f'{prefix}_{k}.tif'), 'w', **a['meta']) as dst:
-                dst.write(line_arr, 1)
-
-        else:
-            meta = {
-                'driver': 'GTiff',
-                'dtype': 'float32',
-                'nodata': np.nan,
-                'count': 1,
-                'width': line_arr.shape[1],
-                'height': line_arr.shape[0],
-                'crs': crs,
-                'transform': rasterio.transform.from_bounds(
-                    west=a['xmin'],
-                    south=a['ymin'],
-                    east=a['xmin'] + (line_arr.shape[1]*a['res_x']),
-                    north=a['ymin'] + (line_arr.shape[0]*a['res_y']),
-                    width=line_arr.shape[1],
-                    height=line_arr.shape[0]
-                )
-            }
-            with rasterio.open(os.path.join(out_lines, f'{prefix}_{k}.tif'), 'w', **meta) as dst:
-                dst.write(line_arr, 1)
+        write_raster(os.path.join(out_lines, f'{prefix}_{k}.tif'), line_arr, a, crs=crs)
 
     r_files = glob.glob(os.path.join(out_lines, f"{prefix}_*.tif"))
     
@@ -124,63 +110,8 @@ def mosaic(
     print(f"Found {len(r_files)} raster files to mosaic")
     
     #load all rasters as a list
-    layers = []
-    if template_path is not None:
-        for rf in r_files:
-            with rasterio.open(rf) as src:
-                layers.append(src.read(1))
-    else:
-        src_datasets = [rasterio.open(rf) for rf in r_files]
-        #determine total extent and resample
-        temp_arr, master_transform = merge(src_datasets, method='count')
-        master_height, master_width = temp_arr.shape[1], temp_arr.shape[2]
-        master_crs = src_datasets[0].crs
-        del temp_arr
-        cube = np.full((len(src_datasets), master_height, master_width), np.nan, dtype=np.float32)
-        for i, src in enumerate(src_datasets):
-            rasterio.warp.reproject(
-                source=rasterio.band(src, 1),
-                destination=cube[i, :, :],
-                src_transform=src.transform,
-                src_crs=src.crs,
-                src_nodata=np.nan,
-                dst_transform=master_transform,
-                dst_crs=master_crs,
-                dst_nodata=np.nan,
-                resampling=rasterio.warp.Resampling.bilinear  # Bilinear smooths sub-pixel shifts cleanly
-            )
-            src.close()
-        del src_datasets
-        layers = cube.copy()
-        del cube
-        gc.collect()
-
-    #take the mean/median of all lines to mosaic
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", category=RuntimeWarning)
-        r_mosaic = np.nanmedian(np.stack(layers), axis=0)
-    del layers
-
-    #plt.imshow(r_mosaic)
-    #plt.show()
-
-    if template_path is not None:
-        with rasterio.open(template_path) as tmp:
-            tmp_meta = tmp.meta.copy()
-    else:
-        tmp_meta = {
-            'driver': 'GTiff',
-            'dtype': 'float32',
-            'nodata': np.nan,
-            'count': 1,
-            'width': master_width,
-            'height': master_height,
-            'crs': master_crs,
-            'transform': master_transform
-        }
-
-    with rasterio.open(mosaic_path, 'w', **tmp_meta) as dst:
-        dst.write(r_mosaic, 1)
+    r_mosaic, grid_param = merge_lines(r_files, template_path=template_path, method='median')
+    write_raster(mosaic_path, r_mosaic, grid_param, crs=crs)
 
     print(f'Processing complete. Output mosaic saved as: {mosaic_path}')
 
