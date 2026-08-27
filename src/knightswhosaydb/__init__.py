@@ -18,7 +18,6 @@ __all__ = [
     "AVG",
     "get_grid_params",
     "grid_line",
-    "build_meta",
     "write_raster",
     "merge_lines",
 ]
