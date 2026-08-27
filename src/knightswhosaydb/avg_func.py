@@ -1,7 +1,6 @@
-import sys
 import numpy as np
-from scipy.stats import binned_statistic_2d
-import warnings
+
+from .rasterize_func import get_grid_params, grid_line
 
 
 def compute_avg(
@@ -109,85 +108,7 @@ def compute_avg(
         
     return avg
 
-def rasterize_avg(avg, template_path=None, bounds=None, res=1.0, save_raw=False, save_bathy=False):
-    #read a template raster with desired extent and resolution
-    if template_path is not None:
-        import rasterio
-        with rasterio.open(template_path) as tmp:
-            tmp_meta = tmp.meta.copy()
-            xmin, ymin, xmax, ymax = tmp.bounds
-            width = tmp.width
-            height = tmp.height
-            res_x, res_y = tmp.res
-    else:
-        #if no template is provided, determine extent from the data
-        tmp_meta = None
-        if bounds is not None:
-            xmin, xmax = bounds[0], bounds[1]
-            ymin, ymax = bounds[2], bounds[3]
-            width = int(np.ceil((xmax - xmin) / res))
-            height = int(np.ceil((ymax - ymin) / res))
-            res_x, res_y = res, res
-        else:
-            xmin, xmax = avg['east'].min(), avg['east'].max()
-            ymin, ymax = avg['north'].min(), avg['north'].max()
-            width = int(np.ceil((xmax - xmin) / res))
-            height = int(np.ceil((ymax - ymin) / res))
-            res_x, res_y = res, res
 
-    #determine raster extent
-    x_edges = np.linspace(xmin, xmax, width + 1)
-    y_edges = np.linspace(ymin, ymax, height + 1)
-
-    output = {
-        'raw': None,
-        'bathy': None,
-        'back': None,
-        'meta': tmp_meta,
-        'xmin': xmin,
-        'xmax': xmax,
-        'ymin': ymin,
-        'ymax': ymax,
-        'y_edges': y_edges,
-        'width': width,
-        'height': height,
-        'res_x': res_x,
-        'res_y': res_y
-    }
-
-    if save_raw:
-        if avg.empty:
-            arr_raw = np.full((height, width), np.nan, dtype=np.float32)
-        else:
-            stat_raw, _, _, _ = binned_statistic_2d(
-                x=avg['east'], y=avg['north'], values=avg['back'],
-                statistic='mean', bins=[x_edges, y_edges]
-            )
-            arr_raw = np.flipud(stat_raw.T).astype(np.float32)
-            output['raw'] = arr_raw
-
-    if save_bathy:
-        if avg.empty:
-            arr_bathy = np.full((height, width), np.nan, dtype=np.float32)
-        else:
-            stat_bathy, _, _, _ = binned_statistic_2d(
-                x=avg['east'], y=avg['north'], values=avg['depth'],
-                statistic='mean', bins=[x_edges, y_edges]
-            )
-            arr_bathy = np.flipud(stat_bathy.T).astype(np.float32)
-            output['bathy'] = arr_bathy
-
-    if avg.empty:
-        arr_avg = np.full((height, width), np.nan, dtype=np.float32)
-    else:
-        stat_avg, _, _, _ = binned_statistic_2d(
-            x=avg['east'], y=avg['north'], values=avg['back_avg'],
-            statistic='median', bins=[x_edges, y_edges]
-        )
-        arr_avg = np.flipud(stat_avg.T).astype(np.float32)
-        output['back'] = arr_avg    
-
-    return output
 
 def AVG(bs_line,
         template_path = None,
@@ -207,6 +128,10 @@ def AVG(bs_line,
         method = 'dual',
         apply_avg = True):
 
+    #deprication warning for old function name
+    import warnings
+    warnings.warn("AVG() is deprecated. Use compute_avg() and then grid_line() instead.", DeprecationWarning)
+
     avg = compute_avg(
         bs_line,
         filter_across = filter_across,
@@ -223,7 +148,7 @@ def AVG(bs_line,
     )
 
     #rasterize
-    return rasterize_avg(
+    return grid_line(
         avg,
         template_path = template_path,
         bounds = bounds,
