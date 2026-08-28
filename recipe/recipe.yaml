@@ -1,0 +1,45 @@
+schema_version: 1
+
+context:
+  version: "0.1.0.devp"  # updated by publish.sh from pyproject.toml
+
+package:
+  name: knightswhosaydb
+  version: ${{ version }}
+
+source:
+  path: ../
+  filter:
+    exclude:
+      - output/**
+      - .venv/**
+
+build:
+  noarch: python
+  script: python -m pip install . --no-deps --no-build-isolation -vv
+
+requirements:
+  host:
+    - python >=3.12
+    - pip
+    - hatchling
+  run:
+    - python >=3.12
+    - themachinethatgoesping
+    - rasterio
+    # pythonnet (win) and pyobjc-framework-cocoa (mac) are declared in
+    # pyproject.toml with sys_platform markers — pip handles them at
+    # install time.  They cannot be listed here because the package is
+    # noarch: python.
+
+
+tests:
+  - python:
+      imports:
+        - knightswhosaydb
+      pip_check: false
+
+about:
+  summary: "Multibeam backscatter reading and processing"
+  license: MIT
+  license_file: LICENSE
