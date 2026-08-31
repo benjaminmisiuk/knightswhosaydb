@@ -3,7 +3,6 @@ import knightswhosaydb
 from knightswhosaydb import mosaic
 
 @pytest.mark.skip(reason="Hardcoded local directory D:/GitHub/... Needs dynamic pathing for GitHub Actions.")
-
 @pytest.mark.parametrize("frequency", [200, 400])
 @pytest.mark.parametrize("file_type", ['fmgt', 'kmall'])
 @pytest.mark.parametrize("res", [1, 2])
