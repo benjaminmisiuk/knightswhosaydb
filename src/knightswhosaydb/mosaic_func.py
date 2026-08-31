@@ -9,6 +9,7 @@ import rasterio
 import rasterio.warp
 from rasterio.merge import merge
 from pathlib import Path
+from tqdm.auto import tqdm
 
 from .avg_func import compute_avg
 from .rasterize_func import write_raster, merge_lines, grid_line
@@ -62,8 +63,9 @@ def mosaic(
     if format == 'fmgt':
         files = glob.glob(os.path.join(dir_path, "*.txt"))
 
-    for k, file_k in enumerate(files):
-        print(f"Processing file {k+1} of {len(files)}: {os.path.basename(file_k)}")
+    prg = tqdm(files, desc="Processing files", unit="file")
+    for k, file_k in enumerate(prg):
+        prg.set_postfix(file=os.path.basename(file_k))
         if format == 'kmall':
             from .kmall_func import read_kmall
             f = read_kmall(file_k, index, **kwargs)
