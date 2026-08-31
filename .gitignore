@@ -187,3 +187,4 @@ cython_debug/
 *.tif
 *.tiff.aux.xml
 *.tif.aux.xml
+/.vscode/settings.json
