@@ -18,6 +18,7 @@ def compute_avg(
     frequency = None,
     back_filter = [-80, 20],
     method = 'dual',
+    verbose=False,
     apply_avg = True
 ):
     #filtering
@@ -25,7 +26,8 @@ def compute_avg(
 
     if frequency is not None:
         if bs_line['frequency'].max() > 1000:
-            print("Converting frequency from Hz to kHz")
+            if verbose:
+                print("\nConverting frequency from Hz to kHz")
             bs_line['frequency'] = bs_line['frequency'] / 1000
         mask = mask & (bs_line['frequency'].isin([frequency]))
 

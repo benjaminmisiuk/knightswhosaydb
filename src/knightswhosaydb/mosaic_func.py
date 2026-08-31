@@ -23,6 +23,7 @@ def mosaic(
     template_path = None,
     crs = None,
     save_lines = False,
+    verbose = False,
     apply_avg = True,
     **kwargs
 ):
@@ -74,13 +75,13 @@ def mosaic(
             f = read_fmgt(file_k, **kwargs)
 
         if is_bathy:
-            avg = compute_avg(bs_line=f, apply_avg=False, **kwargs)
+            avg = compute_avg(bs_line=f, apply_avg=False, verbose=verbose, **kwargs)
             a = grid_line(avg, template_path=template_path, save_bathy=True, **kwargs)
         elif var_key == 'raw':
-            avg = compute_avg(bs_line=f, apply_avg=False, **kwargs)
+            avg = compute_avg(bs_line=f, apply_avg=False, verbose=verbose, **kwargs)
             a = grid_line(avg, template_path=template_path, save_raw=True, **kwargs)
         else:
-            avg = compute_avg(bs_line=f, apply_avg=True, **kwargs)
+            avg = compute_avg(bs_line=f, apply_avg=True, verbose=verbose, **kwargs)
             a = grid_line(avg, template_path=template_path, save_bathy=False, **kwargs)
 
         #line_arr chooses the bathy or back output from AVG()
@@ -109,8 +110,9 @@ def mosaic(
             f"   Tip: Run AVG() on a single file separately to diagnose the issue."
         )
         raise FileNotFoundError(error_msg)
-    
-    print(f"Found {len(r_files)} raster files to mosaic")
+
+    if verbose:
+        print(f"Found {len(r_files)} raster files to mosaic")
     
     #load all rasters as a list
     r_mosaic, grid_param = merge_lines(r_files, template_path=template_path, method='median')
