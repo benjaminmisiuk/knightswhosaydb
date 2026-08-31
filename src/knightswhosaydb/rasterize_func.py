@@ -48,7 +48,7 @@ def get_grid_params(data=None, template_path=None, bounds=None, res=1.0):
     }
 
 
-def grid_line(data, template_path=None, bounds=None, res=1.0, save_raw=False, save_bathy=False):
+def grid_line(data, template_path=None, bounds=None, res=1.0, save_raw=False, save_bathy=False, **kwargs):
     grid_params = get_grid_params(data, template_path=template_path, bounds=bounds, res=res)
 
     x_edges = grid_params['x_edges']

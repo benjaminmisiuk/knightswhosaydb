@@ -22,6 +22,7 @@ def mosaic(
     template_path = None,
     crs = None,
     save_lines = False,
+    apply_avg = True,
     **kwargs
 ):
     if layer == 'backscatter':
@@ -67,7 +68,7 @@ def mosaic(
             from .kmall_func import read_kmall
             f = read_kmall(file_k, index, **kwargs)
         elif format == 'fmgt':
-            from .fmgy_func import read_fmgt
+            from .fmgt_func import read_fmgt
             f = read_fmgt(file_k, **kwargs)
 
         if is_bathy:
