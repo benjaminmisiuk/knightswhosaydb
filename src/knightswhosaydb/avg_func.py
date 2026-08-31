@@ -5,6 +5,7 @@ from .rasterize_func import get_grid_params, grid_line
 
 def compute_avg(
     bs_line,
+    apply_avg,
     filter_across = False,
     filter_along = False,
     save_raw = False,
@@ -18,8 +19,7 @@ def compute_avg(
     frequency = None,
     back_filter = [-80, 20],
     method = 'dual',
-    verbose=False,
-    apply_avg = True
+    verbose=False
 ):
     #filtering
     mask = (bs_line['back'] > back_filter[0]) & (bs_line['back'] < back_filter[1])
