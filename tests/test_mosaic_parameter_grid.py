@@ -23,7 +23,6 @@ def test_mosaic_parameter_grid(tmp_path, frequency, file_type, res, template_pat
             frequency=frequency,
             crs='EPSG:32622',
             template_path=template_path,
-            apply_avg=apply_avg,
             res=res
         )
     except Exception as e:
