@@ -22,7 +22,6 @@ def mosaic(
     template_path = None,
     crs = None,
     save_lines = False,
-    apply_avg = True,
     **kwargs
 ):
     if layer == 'backscatter':
