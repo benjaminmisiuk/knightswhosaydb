@@ -25,7 +25,7 @@ requirements:
     - hatchling
   run:
     - python >=3.12
-    - themachinethatgoesping
+    - themachinethatgoesping >=0.35.1
     - rasterio
     # pythonnet (win) and pyobjc-framework-cocoa (mac) are declared in
     # pyproject.toml with sys_platform markers — pip handles them at
