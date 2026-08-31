@@ -1,59 +1,25 @@
-import sys
 import numpy as np
-from scipy.stats import binned_statistic_2d
-import warnings
 
-def AVG(bs_line,
-        template_path = None,
-        bounds = None, #[xmin, xmax, ymin, ymax]
-        filter_across = False,
-        filter_along = False,
-        save_raw = False,
-        save_bathy = False,
-        q_along = 0.01,
-        q_across = 0.01,
-        res = 1.0,
-        w = 300,
-        angle_intv = 5,
-        ref = 40,
-        frequency = None,
-        back_filter = [-80, 20],
-        method = 'dual',
-        apply_avg = True):
+from .rasterize_func import get_grid_params, grid_line
 
-    #check that bs_line has the proper columns
-    if not {'east', 'north', 'depth', 'back', 'ping_no', 'angle'}.issubset(bs_line.columns):
-        sys.exit("Missing columns in bs_line DataFrame. Required columns: 'east', 'north', 'depth', 'back', 'ping_no', 'angle'")
 
-    #read a template raster with desired extent and resolution
-    if template_path is not None:
-        import rasterio
-        with rasterio.open(template_path) as tmp:
-            tmp_meta = tmp.meta.copy()
-            xmin, ymin, xmax, ymax = tmp.bounds
-            width = tmp.width
-            height = tmp.height
-            res_x, res_y = tmp.res
-    else:
-        #if no template is provided, determine extent from the data
-        tmp_meta = None
-        if bounds is not None:
-            xmin, xmax = bounds[0], bounds[1]
-            ymin, ymax = bounds[2], bounds[3]
-            width = int(np.ceil((xmax - xmin) / res))
-            height = int(np.ceil((ymax - ymin) / res))
-            res_x, res_y = res, res
-        else:
-            xmin, xmax = bs_line['east'].min(), bs_line['east'].max()
-            ymin, ymax = bs_line['north'].min(), bs_line['north'].max()
-            width = int(np.ceil((xmax - xmin) / res))
-            height = int(np.ceil((ymax - ymin) / res))
-            res_x, res_y = res, res
-
-    #determine raster extent
-    x_edges = np.linspace(xmin, xmax, width + 1)
-    y_edges = np.linspace(ymin, ymax, height + 1)
-
+def compute_avg(
+    bs_line,
+    filter_across = False,
+    filter_along = False,
+    save_raw = False,
+    save_bathy = False,
+    q_along = 0.01,
+    q_across = 0.01,
+    res = 1.0,
+    w = 300,
+    angle_intv = 5,
+    ref = 40,
+    frequency = None,
+    back_filter = [-80, 20],
+    method = 'dual',
+    apply_avg = True
+):
     #filtering
     mask = (bs_line['back'] > back_filter[0]) & (bs_line['back'] < back_filter[1])
 
@@ -64,7 +30,7 @@ def AVG(bs_line,
         mask = mask & (bs_line['frequency'].isin([frequency]))
 
     bs_line = bs_line[mask].copy()
-
+    
     if apply_avg:
         #angle binning and aggregation
         angles = np.arange(-70, 75, angle_intv)  # angle intervals
@@ -139,57 +105,54 @@ def AVG(bs_line,
         q_high_bathy = avg['depth'].groupby(avg['ping_no']).transform(lambda x: x.quantile(1-q_across))
         mask = (avg['back_avg'] >= q_low_back) & (avg['back_avg'] <= q_high_back) & (avg['depth'] >= q_low_bathy ) & (avg['depth'] <= q_high_bathy)
         avg = avg[mask].copy()
+        
+    return avg
+
+
+
+def AVG(bs_line,
+        template_path = None,
+        bounds = None, #[xmin, xmax, ymin, ymax]
+        filter_across = False,
+        filter_along = False,
+        save_raw = False,
+        save_bathy = False,
+        q_along = 0.01,
+        q_across = 0.01,
+        res = 1.0,
+        w = 300,
+        angle_intv = 5,
+        ref = 40,
+        frequency = None,
+        back_filter = [-80, 20],
+        method = 'dual',
+        apply_avg = True):
+
+    #deprication warning for old function name
+    import warnings
+    warnings.warn("AVG() is deprecated. Use compute_avg() and then grid_line() instead.", DeprecationWarning)
+
+    avg = compute_avg(
+        bs_line,
+        filter_across = filter_across,
+        filter_along = filter_along,
+        q_along = q_along,
+        q_across = q_across,
+        w = w,
+        angle_intv = angle_intv,
+        ref = ref,
+        frequency = frequency,
+        back_filter = back_filter,
+        method = method,
+        apply_avg = apply_avg
+    )
 
     #rasterize
-    def empty_raster_like(width, height, dtype=np.float32):
-        return np.full((height, width), np.nan, dtype=dtype)
-
-    output = {
-        'raw': None,
-        'bathy': None,
-        'back': None,
-        'meta': tmp_meta,
-        'xmin': xmin,
-        'xmax': xmax,
-        'ymin': ymin,
-        'ymax': ymax,
-        'y_edges': y_edges,
-        'width': width,
-        'height': height,
-        'res_x': res_x,
-        'res_y': res_y
-    }
-
-    if save_raw:
-        if avg.empty:
-            arr_raw = empty_raster_like(width, height)
-        else:
-            stat_raw, _, _, _ = binned_statistic_2d(
-                x=avg['east'], y=avg['north'], values=avg['back'],
-                statistic='mean', bins=[x_edges, y_edges]
-            )
-            arr_raw = np.flipud(stat_raw.T).astype(np.float32)
-            output['raw'] = arr_raw
-
-    if save_bathy:
-        if avg.empty:
-            arr_raw = empty_raster_like(width, height)
-        else:
-            stat_raw, _, _, _ = binned_statistic_2d(
-                x=avg['east'], y=avg['north'], values=avg['depth'],
-                statistic='mean', bins=[x_edges, y_edges]
-            )
-            arr_raw = np.flipud(stat_raw.T).astype(np.float32)
-            output['bathy'] = arr_raw
-
-    if avg.empty:
-        arr_avg = empty_raster_like(width, height)
-    else:
-        stat_avg, _, _, _ = binned_statistic_2d(
-            x=avg['east'], y=avg['north'], values=avg['back_avg'],
-            statistic='median', bins=[x_edges, y_edges]
-        )
-        arr_avg = np.flipud(stat_avg.T).astype(np.float32)
-        output['back'] = arr_avg
-
-    return output
+    return grid_line(
+        avg,
+        template_path = template_path,
+        bounds = bounds,
+        res = res,
+        save_raw = save_raw,
+        save_bathy = save_bathy
+    )

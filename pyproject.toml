@@ -15,7 +15,9 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 dependencies = [
-
+    "numpy",
+    "pandas",
+    "scipy"
 ]
 
 [project.optional-dependencies]
@@ -38,7 +40,7 @@ packages = ["src/knightswhosaydb"]
 # ---------------------------------------------------------------------------
 
 [tool.pixi.workspace]
-channels = ["conda-forge"]
+channels = ["conda-forge", "themachinethatgoesping"]
 platforms = ["linux-64", "win-64", "osx-arm64"]
 
 [tool.pixi.pypi-dependencies]
@@ -50,6 +52,8 @@ hatchling = "*"
 pip = ">=26.0.1,<27"
 pytest = ">=9.0.3,<10"
 nbmake = ">=1.5.5,<2"
+rasterio = ">=1.5.1,<2"
+themachinethatgoesping = ">=0.33.2.dev1,<0.35"
 
 # [tool.pixi.tasks]
 # test = "pytest tests/"
@@ -61,6 +65,7 @@ anaconda-client = "*"
 rattler-build = "*"
 
 [tool.pixi.feature.build.tasks]
+test = "python -m pytest -v tests/"
 build-pypi = "python -m build"
 upload-pypi = { cmd = "twine upload dist/*", depends-on = ["build-pypi"] }
 build-conda = "rattler-build build --recipe recipe/recipe.yaml --output output"

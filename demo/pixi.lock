@@ -13140,6 +13140,9 @@ packages:
 - pypi: ..
   name: knightswhosaydb
   requires_dist:
+  - numpy
+  - pandas
+  - scipy
   - rasterio ; extra == 'grid'
   - themachinethatgoesping ; extra == 'kmall'
   - themachinethatgoesping ; extra == 'all'
