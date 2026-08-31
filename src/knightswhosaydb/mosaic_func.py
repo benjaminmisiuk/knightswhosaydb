@@ -9,6 +9,7 @@ import rasterio
 import rasterio.warp
 from rasterio.merge import merge
 from pathlib import Path
+from tqdm.auto import tqdm
 
 from .avg_func import compute_avg
 from .rasterize_func import write_raster, merge_lines, grid_line
@@ -22,6 +23,7 @@ def mosaic(
     template_path = None,
     crs = None,
     save_lines = False,
+    verbose = False,
     **kwargs
 ):
     if layer == 'backscatter':
@@ -61,8 +63,9 @@ def mosaic(
     if format == 'fmgt':
         files = glob.glob(os.path.join(dir_path, "*.txt"))
 
-    for k, file_k in enumerate(files):
-        print(f"Processing file {k+1} of {len(files)}: {os.path.basename(file_k)}")
+    prg = tqdm(files, desc="Processing files", unit="file")
+    for k, file_k in enumerate(prg):
+        prg.set_postfix(file=os.path.basename(file_k))
         if format == 'kmall':
             from .kmall_func import read_kmall
             f = read_kmall(file_k, index, **kwargs)
@@ -71,13 +74,13 @@ def mosaic(
             f = read_fmgt(file_k, **kwargs)
 
         if is_bathy:
-            avg = compute_avg(bs_line=f, apply_avg=False, **kwargs)
+            avg = compute_avg(bs_line=f, apply_avg=False, verbose=verbose, **kwargs)
             a = grid_line(avg, template_path=template_path, save_bathy=True, **kwargs)
         elif var_key == 'raw':
-            avg = compute_avg(bs_line=f, apply_avg=False, **kwargs)
+            avg = compute_avg(bs_line=f, apply_avg=False, verbose=verbose, **kwargs)
             a = grid_line(avg, template_path=template_path, save_raw=True, **kwargs)
         else:
-            avg = compute_avg(bs_line=f, apply_avg=True, **kwargs)
+            avg = compute_avg(bs_line=f, apply_avg=True, verbose=verbose, **kwargs)
             a = grid_line(avg, template_path=template_path, save_bathy=False, **kwargs)
 
         #line_arr chooses the bathy or back output from AVG()
@@ -106,8 +109,9 @@ def mosaic(
             f"   Tip: Run AVG() on a single file separately to diagnose the issue."
         )
         raise FileNotFoundError(error_msg)
-    
-    print(f"Found {len(r_files)} raster files to mosaic")
+
+    if verbose:
+        print(f"Found {len(r_files)} raster files to mosaic")
     
     #load all rasters as a list
     r_mosaic, grid_param = merge_lines(r_files, template_path=template_path, method='median')
