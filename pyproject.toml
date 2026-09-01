@@ -17,7 +17,9 @@ classifiers = [
 dependencies = [
     "numpy",
     "pandas",
-    "scipy"
+    "scipy",
+    "themachinethatgoesping>=0.35.1,<0.36",
+    "rasterio>=1.5.0,<2"
 ]
 
 [project.optional-dependencies]
@@ -41,28 +43,31 @@ packages = ["src/knightswhosaydb"]
 
 [tool.pixi.workspace]
 channels = ["conda-forge", "themachinethatgoesping"]
-platforms = ["linux-64", "win-64", "osx-arm64"]
+platforms = [
+    { platform = "linux-64", glibc = "2.34" },
+    { platform = "osx-arm64", macos = "14.0" },
+    "win-64",
+]
 
 [tool.pixi.pypi-dependencies]
 knightswhosaydb = { path = ".", editable = true }
 
 [tool.pixi.dependencies]
 python = ">=3.12"
-hatchling = "*"
-pip = ">=26.0.1,<27"
-pytest = ">=9.0.3,<10"
+hatchling = ">=1.32.0,<2"
+pip = ">=26.2.1,<27"
+pytest = ">=9.1.1,<10"
 nbmake = ">=1.5.5,<2"
-rasterio = ">=1.5.1,<2"
-themachinethatgoesping = ">=0.33.2.dev1,<0.35"
+
 
 # [tool.pixi.tasks]
 # test = "pytest tests/"
 
 [tool.pixi.feature.build.dependencies]
-python-build = "*"
-twine = "*"
-anaconda-client = "*"
-rattler-build = "*"
+python-build = ">=1.6.0,<2"
+twine = ">=7.0.0,<8"
+anaconda-client = ">=1.14.1,<2"
+rattler-build = ">=0.75.0,<0.76"
 
 [tool.pixi.feature.build.tasks]
 test = "python -m pytest -v tests/"
