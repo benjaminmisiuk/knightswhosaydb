@@ -1,9 +1,14 @@
 [workspace]
 authors = ["Peter Urban <peter.urban@urcoustics.com>"]
-channels = ["conda-forge", "themachinethatgoesping"]
 name = "knightsdemo"
-platforms = ["linux-64", "win-64", "osx-arm64"]
 version = "0.1.0"
+
+channels = ["conda-forge", "themachinethatgoesping"]
+platforms = [
+    { platform = "linux-64", glibc = "2.34" },
+    { platform = "osx-arm64", macos = "14.0" },
+    "win-64",
+]
 
 [tasks]
 
@@ -11,8 +16,6 @@ version = "0.1.0"
 jupyterlab = ">=4.6.3,<5"
 ipympl = ">=0.10.0,<0.11"
 python = "3.14.*"
-themachinethatgoesping = ">=0.34.3.dev0,<0.35"
-rasterio = ">=1.5.0,<2"
 
 [pypi-dependencies]
 knightswhosaydb = { path = "../" , editable = true }
