@@ -2,10 +2,10 @@ import knightswhosaydb as kdb
 
 kdb.mosaic(
     dir_path = "/home/data/test_data/m143/",
-    format = 'mall',
+    format = 'all',
     out_lines = 'lines',
     mosaic_path = 'egmont025_b.tif',
-    crs = "EPSG:/home/data/test_data/m143/",
+    crs = "EPSG:32635",
     layer='depth',
     save_lines=True,
     res=10

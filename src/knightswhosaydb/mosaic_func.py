@@ -67,7 +67,7 @@ def mosaic(
         case 'fmgt':
             files = glob.glob(os.path.join(dir_path, "*.txt"))
         case _:
-            raise ValueError(f"Unsupported format: {format}. Supported formats are 'kmall' and 'fmgt'.")
+            raise ValueError(f"Unsupported format: {format}. Supported formats are 'kmall', 'all' and 'fmgt'.")
 
     prg = tqdm(files, desc="Processing files", unit="file")
     for k, file_k in enumerate(prg):
