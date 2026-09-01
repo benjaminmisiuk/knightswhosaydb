@@ -6741,8 +6741,8 @@ packages:
   - themachinethatgoesping>=0.35.1,<0.36
   - rasterio>=1.5.0,<2
   - rasterio ; extra == 'grid'
-  - themachinethatgoesping ; extra == 'kmall'
-  - themachinethatgoesping ; extra == 'all'
+  - themachinethatgoesping>=0.35.1 ; extra == 'kmall'
+  - themachinethatgoesping>=0.35.1 ; extra == 'all'
   - rasterio ; extra == 'all'
   requires_python: '>=3.12'
 - pypi: https://files.pythonhosted.org/packages/06/ec/5189518c7a7659c4bdcc6b1eb32c46c6f3c86b0661ffd84143d1112c7732/pandas-3.0.5-cp314-cp314-macosx_11_0_arm64.whl

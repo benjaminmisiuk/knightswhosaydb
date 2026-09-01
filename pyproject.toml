@@ -24,8 +24,8 @@ dependencies = [
 
 [project.optional-dependencies]
 grid = ["rasterio"]
-kmall = ["themachinethatgoesping"]
-all = ["themachinethatgoesping", "rasterio"]
+kmall = ["themachinethatgoesping >=0.35.1"]
+all = ["themachinethatgoesping >=0.35.1", "rasterio"]
 
 [project.urls]
 Homepage = "https://github.com/benjaminmisiuk/knights-who-say-db"

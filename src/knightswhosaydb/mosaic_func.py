@@ -55,23 +55,33 @@ def mosaic(
 
     os.makedirs(out_lines, exist_ok=True)
 
-    if format == 'kmall':
-        import themachinethatgoesping as theping
-        files, index = theping.echosounders.index_functions.find_files_and_index(dir_path, ['.kmall'], index_root=out_lines)
-        files.sort()
-
-    if format == 'fmgt':
-        files = glob.glob(os.path.join(dir_path, "*.txt"))
+    match format:
+        case 'kmall':
+            import themachinethatgoesping as theping
+            files, index = theping.echosounders.index_functions.find_files_and_index(dir_path, ['.kmall'], index_root=out_lines)
+            files.sort()
+        case 'all':
+            import themachinethatgoesping as theping
+            files, index = theping.echosounders.index_functions.find_files_and_index(dir_path, ['.all'], index_root=out_lines)
+            files.sort()
+        case 'fmgt':
+            files = glob.glob(os.path.join(dir_path, "*.txt"))
+        case _:
+            raise ValueError(f"Unsupported format: {format}. Supported formats are 'kmall', 'all' and 'fmgt'.")
 
     prg = tqdm(files, desc="Processing files", unit="file")
     for k, file_k in enumerate(prg):
         prg.set_postfix(file=os.path.basename(file_k))
-        if format == 'kmall':
-            from .kmall_func import read_kmall
-            f = read_kmall(file_k, index, **kwargs)
-        elif format == 'fmgt':
-            from .fmgt_func import read_fmgt
-            f = read_fmgt(file_k, **kwargs)
+        match format:
+            case 'kmall':
+                from .kmall_func import read_kmall
+                f = read_kmall(file_k, index, **kwargs)
+            case 'all':
+                from .kongsbergall_func import read_kongsbergall
+                f = read_kongsbergall(file_k, index, **kwargs)
+            case 'fmgt':
+                from .fmgt_func import read_fmgt
+                f = read_fmgt(file_k, **kwargs)
 
         if is_bathy:
             avg = compute_avg(bs_line=f, apply_avg=False, verbose=verbose, **kwargs)
