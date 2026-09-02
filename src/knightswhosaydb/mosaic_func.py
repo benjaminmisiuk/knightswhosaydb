@@ -17,7 +17,7 @@ from .rasterize_func import write_raster, merge_lines, grid_line
 def mosaic(
     dir_path,
     format, #'fmgt' or 'kmall'
-    layer = 'backscatter', #'backscatter' or 'depth'
+    layer = 'backscatter', #'backscatter', 'raw' or 'depth'
     out_lines = None,
     mosaic_path = 'Mosaic.tif',
     template_path = None,
@@ -85,12 +85,24 @@ def mosaic(
 
         if is_bathy:
             avg = compute_avg(bs_line=f, apply_avg=False, verbose=verbose, **kwargs)
+            if len(avg['depth']) == 0 or avg['depth'].isna().all() or avg['east'].isna().all() or avg['north'].isna().all():
+                if verbose:
+                    print(f"  No valid bathymetry data in file {k+1} after filtering (check frequency, back_filter, or other parameters)")
+                continue
             a = grid_line(avg, template_path=template_path, save_bathy=True, **kwargs)
         elif var_key == 'raw':
             avg = compute_avg(bs_line=f, apply_avg=False, verbose=verbose, **kwargs)
+            if avg.empty or avg['back'].size == 0 or np.all(np.isnan(avg['back'])) or avg['east'].isna().all() or avg['north'].isna().all():
+                if verbose:
+                    print(f"  No valid backscatter data in file {k+1} after filtering (check frequency, back_filter, or other parameters)")
+                continue
             a = grid_line(avg, template_path=template_path, save_raw=True, **kwargs)
         else:
             avg = compute_avg(bs_line=f, apply_avg=True, verbose=verbose, **kwargs)
+            if avg.empty or len(avg['back_avg']) == 0 or avg['east'].isna().all() or avg['north'].isna().all():
+                if verbose:
+                    print(f"  No valid backscatter data in file {k+1} after filtering (check frequency, back_filter, or other parameters)")
+                continue
             a = grid_line(avg, template_path=template_path, save_bathy=False, **kwargs)
 
         #line_arr chooses the bathy or back output from AVG()
@@ -98,7 +110,8 @@ def mosaic(
 
         #skip remainder of this file if empty
         if line_arr is None:
-            print(f"  No valid data in file {k+1} after filtering (check frequency, back_filter, or other parameters)")
+            if verbose:
+                print(f"  No valid data in file {k+1} after filtering (check frequency, back_filter, or other parameters)")
             continue
 
         write_raster(os.path.join(out_lines, f'{prefix}_{k}.tif'), line_arr, a, crs=crs)

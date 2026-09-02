@@ -25,6 +25,9 @@ def get_grid_params(data=None, template_path=None, bounds=None, res=1.0):
         else:
             xmin, xmax = data['east'].min(), data['east'].max()
             ymin, ymax = data['north'].min(), data['north'].max()
+        if np.isnan(xmin) or np.isnan(xmax) or np.isnan(ymin) or np.isnan(ymax):
+            raise ValueError(
+                f"Cannot compute grid parameters: data contains no valid coordinates. xmin={xmin}, xmax={xmax}, ymin={ymin}, ymax={ymax}. Check that your frequency and filtering parameters result in valid data.")
         width = int(np.ceil((xmax - xmin) / res))
         height = int(np.ceil((ymax - ymin) / res))
         #snap edges to an exact pixel size so every line shares the same resolution
