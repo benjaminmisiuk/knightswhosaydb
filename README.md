@@ -5,6 +5,14 @@ Multibeam backscatter reading and processing
 This package is used to read and process raw multibeam backscatter data with Python. At the very simplest, it can be used to produce a backscatter mosaic from raw. It also allows for extracting sounding information for developing bespoke processing pipelines. Reading raw datagrams is enabled by [themachinethatgoesping](https://github.com/themachinethatgoesping).
 
 ## Status
+| Format | Support | Status |
+| -------- | -------- | -------- |
+| FMGT | ✅ | Implemented |
+| KMALL | ✅ | In development... |
+| ALL | ✅ | In development... |
+| GSF | ❌ | Planned |
+| R2S | ❌ | Planned |
+| S7K | ❌ | Planned |
 
 ## Installation
 To install the package download the code or clone the repository then install on your machine using pip by pointing to the directory.
