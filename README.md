@@ -11,6 +11,10 @@ To install the package download the code or clone the repository then install on
 ```
 pip install D:\knightswhosaydb
 ```
+Or install directly from the git repository.
+```
+pip install git+https://github.com/benjaminmisiuk/knightswhosaydb
+```
 
 ## Functionality
 At it's most basic, the package can be used to extract soundings from raw data using [themachinethatgoesping](https://github.com/themachinethatgoesping), and grid the backscatter. 
