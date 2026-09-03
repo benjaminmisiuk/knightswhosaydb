@@ -7,7 +7,7 @@ This package is used to read and process raw multibeam backscatter data with Pyt
 ## Status
 | Format | Support | Status |
 | -------- | -------- | -------- |
-| FMGT | ✅ | Implemented |
+| FMGT ASCII | ✅ | Implemented |
 | KMALL | ✅ | In development... |
 | ALL | ✅ | In development... |
 | GSF | ❌ | Planned |
