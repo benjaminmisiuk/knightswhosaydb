@@ -1,6 +1,6 @@
 [project]
 name = "knightswhosaydb"
-version = "0.1.0"
+version = "0.1.1.dev1"
 description = "Multibeam backscatter reading and processing"
 authors = [{name = "Benjamin Misiuk", email = "bmisiuk@mun.ca"},
            {name = "Peter Urban", email = "peter.urban@urcoustics.com"}]
