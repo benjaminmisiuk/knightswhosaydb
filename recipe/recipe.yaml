@@ -1,7 +1,7 @@
 schema_version: 1
 
 context:
-  version: "0.1.0.devp"  # updated by publish.sh from pyproject.toml
+  version: "0.1.1.dev1"  # updated by publish.sh from pyproject.toml
 
 package:
   name: knightswhosaydb
