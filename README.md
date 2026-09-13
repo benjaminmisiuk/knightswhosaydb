@@ -1,6 +1,6 @@
 # Knights Who Say dB
 
-Multibeam backscatter reading and processing
+Multibeam backscatter reading and processing in Python
 
 This package is used to read and process raw multibeam backscatter data with Python. At the very simplest, it can be used to produce a backscatter mosaic from raw. It also allows for extracting sounding information for developing bespoke processing pipelines. Reading raw datagrams is enabled by [themachinethatgoesping](https://github.com/themachinethatgoesping).
 
