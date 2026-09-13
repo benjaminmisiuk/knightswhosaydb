@@ -17,11 +17,15 @@ This package is used to read and process raw multibeam backscatter data with Pyt
 ## Installation
 To install the package download the code or clone the repository then install on your machine using pip by pointing to the directory.
 ```
-pip install D:\knightswhosaydb
+pip install /path/to/knightswhosaydb
 ```
 Or install directly from the git repository.
 ```
 pip install git+https://github.com/benjaminmisiuk/knightswhosaydb
+```
+Alternatively, install via [pixi](https://pixi.sh) instead, which sets up a project-local environment matching `pixi.lock`. Run the following command from within the downloaded/cloned directory.
+```
+pixi install
 ```
 
 ## Functionality
@@ -37,4 +41,3 @@ mosaic(
     crs='EPSG:32755'
 )
 ```
-
