@@ -4,11 +4,19 @@ Multibeam backscatter reading and processing in Python
 
 This package is used to read and process raw multibeam backscatter data with Python. At the very simplest, it can be used to produce a backscatter mosaic from raw. It also allows for extracting sounding information for developing bespoke processing pipelines. Reading raw datagrams is enabled by [themachinethatgoesping](https://github.com/themachinethatgoesping).
 
-Current functionality and use-cases include:
+Current functionality includes:
 - creating a backscatter mosaic from raw multibeam data
 - quickly processing and exporting single multibeam data lines (files)
 - processing multifrequency multibeam data
 - extracting soundings (not mosaics) from raw multibeam files
+- **free** and **open source**!
+
+Use-cases for these processes include:
+- automatically processing large amounts of data as one or many separate mosaics
+- programatically mosaicking one or multiple backscatter frequencies from multifrequency systems
+- extracting raw soundings to create your own backscatter mosaicking methods
+- extracting soundings to perform angular backscatter analyses
+- building automated processing pipelines, for example, enabling preliminary viewing and exporting of backscatter while at sea 🚢
 
 ## Status
 | Format | Support | Status |
