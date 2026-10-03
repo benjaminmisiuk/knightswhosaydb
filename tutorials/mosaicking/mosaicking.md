@@ -28,7 +28,7 @@ Here is an image of the mosaic visualized using external software.
 
 <br>
 
-<img src="../images/mosaic.png" height="25%" />
+<img src="../images/Mosaic.png" height="25%" />
 
 These data are from a multifrequency MBES survey. Data were collected at 200, 400, and 600 kHz. We can isolate any one of these frequencies. Additionally, if we have another raster from the area (e.g., bathymetry), we can use that as a template for both resolution and coordinate reference. This is recommended for simplicity and accuracy in many cases. Here we have a 2 m bathymetric grid to use as the template.
 
