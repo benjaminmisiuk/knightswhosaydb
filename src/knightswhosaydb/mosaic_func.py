@@ -52,6 +52,8 @@ def mosaic(
 
     if out_lines is None:
         out_lines = str(Path.cwd()/"temp")
+    else:
+        out_lines = str(out_lines + 'temp/')
 
     os.makedirs(out_lines, exist_ok=True)
 
