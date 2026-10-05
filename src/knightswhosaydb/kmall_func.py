@@ -83,13 +83,21 @@ def get_kmall_beam_data(ping, pn, back_mode="bs1"):
 
     return np.concatenate(rows, axis=0)
 
-
+    
 def read_kmall(file, index, back_mode="bs1", verbose=False, **kwargs):
     fh = theping.echosounders.kmall.KMALLFileHandler(file,
                                                      index,
                                                      show_progress=verbose)
     pings = theping.pingprocessing.filter_pings.by_features(
         fh.get_pings(), ["bottom.xyz"])
+
+    # check if there are no XYZ pings
+    if len(pings) == 0:
+        error = f"No XYZ pings found in file: {file}"
+        if file.endswith(".kmwcd"):
+            error += " (file ends with .wcd which indicates you might supplied water column files instead of the bottom tracking related .kmall files)"
+
+        raise ValueError(error)
 
     bs_data = []
 

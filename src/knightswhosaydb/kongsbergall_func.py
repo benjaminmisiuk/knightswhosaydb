@@ -79,6 +79,46 @@ def get_kongsbergall_beam_data(ping, pn, back_mode="bs1"):
         frequency,
     ))
 
+supported_models = [
+    "em2040", 
+    "em710", 
+    "em302", 
+    "em122", 
+    "em712", 
+    "em304", 
+    "em124", 
+    "me70bo", 
+    ]  # example supported models
+
+def remove_trailing_letters(model):
+    import re
+    return re.sub(r'\D+$', '', model)
+
+def catch_fh_problems(fh):
+    
+    error = ""
+        
+    # check for valid model numbers
+    for nav_key in fh.navigation_interface.get_navigation_interpolator_keys():
+        nav = fh.navigation_interface.get_navigation_interpolator(nav_key)
+        sc = nav.get_sensor_configuration()
+        model = sc.get_model_name()
+
+        error = ""
+        
+        if not remove_trailing_letters(model.lower()) in supported_models:
+            if model.lower() == "me70bo":
+                continue
+            
+            # We only create a warning for unsupported models, not an error
+            # Errors will happen later in case no XYZ pings are found
+            error = f"Unsupported EM model: {model} that did not generate XYZ data.\nCurrently supported models are: {supported_models}.\nSupport for this model will be added in the future.\n"
+            import sys
+            print(f"\n{error}",
+                  file=sys.stderr)
+
+    return error
+
 
 def read_kongsbergall(file, index, back_mode="bs1", verbose=False, **kwargs):
     fh = theping.echosounders.kongsbergall.KongsbergAllFileHandler(file,
@@ -87,6 +127,18 @@ def read_kongsbergall(file, index, back_mode="bs1", verbose=False, **kwargs):
     pings = theping.pingprocessing.filter_pings.by_features(
         fh.get_pings(), ["bottom.xyz"])
 
+    # catch potential problems with the file handler before processing pings
+    error_ = catch_fh_problems(fh)
+
+    # check if there are no XYZ pings
+    if len(pings) == 0:
+        error = f"\nNo XYZ pings found in file: {file}"
+        if file.endswith(".wcd"):
+            error += "\nPotential cause: File ends with .wcd which indicates you might supplied water column files instead of the bottom tracking related .all files"
+        if len(error_) > 0:
+            error += "\nPotential cause: " + error_
+        raise ValueError(error)
+    
     bs_data = []
 
     for pn, ping in enumerate(tqdm(pings, delay=10, desc=f"Reading {file}")):
