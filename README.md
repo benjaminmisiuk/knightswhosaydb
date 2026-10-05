@@ -18,7 +18,6 @@ Use-cases for these processes include:
 - extracting soundings to perform angular backscatter analyses
 - building automated processing pipelines, for example, enabling preliminary viewing and exporting of backscatter while at sea 🚢
 
-Check out our [tutorials](https://github.com/benjaminmisiuk/knightswhosaydb/tree/0ad5f5602bab967d3d940c547e346cbf82c9ae6b/tutorials) on how to use the package.
 
 ## Status
 | Format | Support | Status |
@@ -57,3 +56,5 @@ mosaic(
     crs='EPSG:32755'
 )
 ```
+
+Check out our [tutorials](https://github.com/benjaminmisiuk/knightswhosaydb/tree/0ad5f5602bab967d3d940c547e346cbf82c9ae6b/tutorials) on how to fully use the package.
