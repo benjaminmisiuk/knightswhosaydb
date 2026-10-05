@@ -13,6 +13,7 @@ from tqdm.auto import tqdm
 
 from .avg_func import compute_avg
 from .rasterize_func import write_raster, merge_lines, grid_line
+from .tempdir_class import TempDir
 
 def mosaic(
     dir_path,
@@ -50,106 +51,98 @@ def mosaic(
         warnings.warn("Both template and CRS provided. Defaulting to template.")
         crs = None
 
-    if out_lines is None:
-        out_lines = str(Path.cwd()/"temp")
-    else:
-        out_lines = str(out_lines + 'temp/')
-
-    os.makedirs(out_lines, exist_ok=True)
-
-    match format:
-        case 'kmall':
-            import themachinethatgoesping as theping
-            files, index = theping.echosounders.index_functions.find_files_and_index(dir_path, ['.kmall'], index_root=out_lines)
-            files.sort()
-        case 'all':
-            import themachinethatgoesping as theping
-            files, index = theping.echosounders.index_functions.find_files_and_index(dir_path, ['.all'], index_root=out_lines)
-            files.sort()
-        case 'fmgt':
-            files = glob.glob(os.path.join(dir_path, "*.txt"))
-        case _:
-            raise ValueError(f"Unsupported format: {format}. Supported formats are 'kmall', 'all' and 'fmgt'.")
-
-    prg = tqdm(files, desc="Processing files", unit="file")
-    for k, file_k in enumerate(prg):
-        prg.set_postfix(file=os.path.basename(file_k))
+    # this calls TempDir.__init__ then TempDir.__enter__
+    # at the end of this block TempDir.__exit__ will be called, cleaning up the temporary directory if save_lines is False.
+    # __enter__ is even called when exceptions are thrown in the block (the program crashes)
+    # Currently I simply use temp_dir.str() to get the path, but in the future we could use it
+    # to manage temporary files more granularly, such as creating subdirectories or handling individual temporary files.
+    with TempDir(out_lines, save_lines) as temp_dir:
+        out_lines = temp_dir.str()
+        
         match format:
             case 'kmall':
-                from .kmall_func import read_kmall
-                f = read_kmall(file_k, index, **kwargs)
+                import themachinethatgoesping as theping
+                files, index = theping.echosounders.index_functions.find_files_and_index(dir_path, ['.kmall'], index_root=out_lines)
+                files.sort()
             case 'all':
-                from .kongsbergall_func import read_kongsbergall
-                f = read_kongsbergall(file_k, index, **kwargs)
+                import themachinethatgoesping as theping
+                files, index = theping.echosounders.index_functions.find_files_and_index(dir_path, ['.all'], index_root=out_lines)
+                files.sort()
             case 'fmgt':
-                from .fmgt_func import read_fmgt
-                f = read_fmgt(file_k, **kwargs)
+                files = glob.glob(os.path.join(dir_path, "*.txt"))
+            case _:
+                raise ValueError(f"Unsupported format: {format}. Supported formats are 'kmall', 'all' and 'fmgt'.")
 
-        if is_bathy:
-            avg = compute_avg(bs_line=f, apply_avg=False, verbose=verbose, **kwargs)
-            if len(avg['depth']) == 0 or avg['depth'].isna().all() or avg['east'].isna().all() or avg['north'].isna().all():
+        prg = tqdm(files, desc="Processing files", unit="file")
+        for k, file_k in enumerate(prg):
+            prg.set_postfix(file=os.path.basename(file_k))
+            match format:
+                case 'kmall':
+                    from .kmall_func import read_kmall
+                    f = read_kmall(file_k, index, **kwargs)
+                case 'all':
+                    from .kongsbergall_func import read_kongsbergall
+                    f = read_kongsbergall(file_k, index, **kwargs)
+                case 'fmgt':
+                    from .fmgt_func import read_fmgt
+                    f = read_fmgt(file_k, **kwargs)
+
+            if is_bathy:
+                avg = compute_avg(bs_line=f, apply_avg=False, verbose=verbose, **kwargs)
+                if len(avg['depth']) == 0 or avg['depth'].isna().all() or avg['east'].isna().all() or avg['north'].isna().all():
+                    if verbose:
+                        print(f"  No valid bathymetry data in file {k+1} after filtering (check frequency, back_filter, or other parameters)")
+                    continue
+                a = grid_line(avg, template_path=template_path, save_bathy=True, **kwargs)
+            elif var_key == 'raw':
+                avg = compute_avg(bs_line=f, apply_avg=False, verbose=verbose, **kwargs)
+                if avg.empty or avg['back'].size == 0 or np.all(np.isnan(avg['back'])) or avg['east'].isna().all() or avg['north'].isna().all():
+                    if verbose:
+                        print(f"  No valid backscatter data in file {k+1} after filtering (check frequency, back_filter, or other parameters)")
+                    continue
+                a = grid_line(avg, template_path=template_path, save_raw=True, **kwargs)
+            else:
+                avg = compute_avg(bs_line=f, apply_avg=True, verbose=verbose, **kwargs)
+                if avg.empty or len(avg['back_avg']) == 0 or avg['east'].isna().all() or avg['north'].isna().all():
+                    if verbose:
+                        print(f"  No valid backscatter data in file {k+1} after filtering (check frequency, back_filter, or other parameters)")
+                    continue
+                a = grid_line(avg, template_path=template_path, save_bathy=False, **kwargs)
+
+            #line_arr chooses the bathy or back output from AVG()
+            line_arr = a[var_key]
+
+            #skip remainder of this file if empty
+            if line_arr is None:
                 if verbose:
-                    print(f"  No valid bathymetry data in file {k+1} after filtering (check frequency, back_filter, or other parameters)")
+                    print(f"  No valid data in file {k+1} after filtering (check frequency, back_filter, or other parameters)")
                 continue
-            a = grid_line(avg, template_path=template_path, save_bathy=True, **kwargs)
-        elif var_key == 'raw':
-            avg = compute_avg(bs_line=f, apply_avg=False, verbose=verbose, **kwargs)
-            if avg.empty or avg['back'].size == 0 or np.all(np.isnan(avg['back'])) or avg['east'].isna().all() or avg['north'].isna().all():
-                if verbose:
-                    print(f"  No valid backscatter data in file {k+1} after filtering (check frequency, back_filter, or other parameters)")
-                continue
-            a = grid_line(avg, template_path=template_path, save_raw=True, **kwargs)
-        else:
-            avg = compute_avg(bs_line=f, apply_avg=True, verbose=verbose, **kwargs)
-            if avg.empty or len(avg['back_avg']) == 0 or avg['east'].isna().all() or avg['north'].isna().all():
-                if verbose:
-                    print(f"  No valid backscatter data in file {k+1} after filtering (check frequency, back_filter, or other parameters)")
-                continue
-            a = grid_line(avg, template_path=template_path, save_bathy=False, **kwargs)
 
-        #line_arr chooses the bathy or back output from AVG()
-        line_arr = a[var_key]
+            write_raster(os.path.join(out_lines, f'{prefix}_{k}.tif'), line_arr, a, crs=crs)
 
-        #skip remainder of this file if empty
-        if line_arr is None:
-            if verbose:
-                print(f"  No valid data in file {k+1} after filtering (check frequency, back_filter, or other parameters)")
-            continue
+        r_files = glob.glob(os.path.join(out_lines, f"{prefix}_*.tif"))
+        
+        # Diagnostic: Check if any .tif files were created
+        if not r_files:
+            error_msg = (
+                f"\n❌ ERROR: No output rasters created.\n"
+                f"   Expected files matching: {prefix}_*.tif in {out_lines}\n"
+                f"   \n"
+                f"   This likely means ALL input files were filtered out.\n"
+                f"   Check your parameters:\n"
+                f"   - frequency={kwargs.get('frequency', 'None')} (data must match exactly)\n"
+                f"   - back_filter={kwargs.get('back_filter', 'None')} (check if data falls in this range)\n"
+                f"   \n"
+                f"   Tip: Run AVG() on a single file separately to diagnose the issue."
+            )
+            raise FileNotFoundError(error_msg)
 
-        write_raster(os.path.join(out_lines, f'{prefix}_{k}.tif'), line_arr, a, crs=crs)
+        if verbose:
+            print(f"Found {len(r_files)} raster files to mosaic")
+        
+        #load all rasters as a list
+        r_mosaic, grid_param = merge_lines(r_files, template_path=template_path, method='median')
+        write_raster(mosaic_path, r_mosaic, grid_param, crs=crs)
 
-    r_files = glob.glob(os.path.join(out_lines, f"{prefix}_*.tif"))
-    
-    # Diagnostic: Check if any .tif files were created
-    if not r_files:
-        error_msg = (
-            f"\n❌ ERROR: No output rasters created.\n"
-            f"   Expected files matching: {prefix}_*.tif in {out_lines}\n"
-            f"   \n"
-            f"   This likely means ALL input files were filtered out.\n"
-            f"   Check your parameters:\n"
-            f"   - frequency={kwargs.get('frequency', 'None')} (data must match exactly)\n"
-            f"   - back_filter={kwargs.get('back_filter', 'None')} (check if data falls in this range)\n"
-            f"   \n"
-            f"   Tip: Run AVG() on a single file separately to diagnose the issue."
-        )
-        raise FileNotFoundError(error_msg)
+        print(f'Processing complete. Output mosaic saved as: {mosaic_path}')
 
-    if verbose:
-        print(f"Found {len(r_files)} raster files to mosaic")
-    
-    #load all rasters as a list
-    r_mosaic, grid_param = merge_lines(r_files, template_path=template_path, method='median')
-    write_raster(mosaic_path, r_mosaic, grid_param, crs=crs)
-
-    print(f'Processing complete. Output mosaic saved as: {mosaic_path}')
-
-    gc.collect()
-    if not save_lines:
-        time.sleep(0.1)
-        try:
-            shutil.rmtree(out_lines)
-        except PermissionError:
-            shutil.rmtree(out_lines, ignore_errors=True)
-    else:
-        print(f'Lines saved to: {out_lines}')
