@@ -57,4 +57,4 @@ mosaic(
 )
 ```
 
-Check out our [tutorials](https://github.com/benjaminmisiuk/knightswhosaydb/tutorials) on how to fully use the package.
+Check out our [tutorials](https://github.com/benjaminmisiuk/knightswhosaydb/tree/main/tutorials) on how to fully use the package.
