@@ -79,7 +79,7 @@ def get_kmall_beam_data(ping, pn, back_mode="bs1"):
             )))
 
     if not rows:
-        return np.empty((0, 10))
+        return np.empty((0, 11))
 
     return np.concatenate(rows, axis=0)
 
