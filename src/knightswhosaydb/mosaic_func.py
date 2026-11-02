@@ -76,16 +76,23 @@ def mosaic(
         prg = tqdm(files, desc="Processing files", unit="file")
         for k, file_k in enumerate(prg):
             prg.set_postfix(file=os.path.basename(file_k))
-            match format:
-                case 'kmall':
-                    from .kmall_func import read_kmall
-                    f = read_kmall(file_k, index, **kwargs)
-                case 'all':
-                    from .kongsbergall_func import read_kongsbergall
-                    f = read_kongsbergall(file_k, index, **kwargs)
-                case 'fmgt':
-                    from .fmgt_func import read_fmgt
-                    f = read_fmgt(file_k, **kwargs)
+            try:
+                match format:
+                    case 'kmall':
+                        from .kmall_func import read_kmall
+                        f = read_kmall(file_k, index, **kwargs)
+                    case 'all':
+                        from .kongsbergall_func import read_kongsbergall
+                        f = read_kongsbergall(file_k, index, **kwargs)
+                    case 'fmgt':
+                        from .fmgt_func import read_fmgt
+                        f = read_fmgt(file_k, **kwargs)
+            except ValueError as exc:
+                warnings.warn(
+                    f"Skipping file due to read error: {file_k}\n{exc}",
+                    RuntimeWarning,
+                )
+                continue
 
             if is_bathy:
                 avg = compute_avg(bs_line=f, apply_avg=False, verbose=verbose, **kwargs)
@@ -145,4 +152,3 @@ def mosaic(
         write_raster(mosaic_path, r_mosaic, grid_param, crs=crs)
 
         print(f'Processing complete. Output mosaic saved as: {mosaic_path}')
-

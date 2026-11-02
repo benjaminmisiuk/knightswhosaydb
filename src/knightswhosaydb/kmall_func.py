@@ -96,7 +96,6 @@ def read_kmall(file, index, back_mode="bs1", verbose=False, **kwargs):
         error = f"No XYZ pings found in file: {file}"
         if file.endswith(".kmwcd"):
             error += " (file ends with .wcd which indicates you might supplied water column files instead of the bottom tracking related .kmall files)"
-
         raise ValueError(error)
 
     bs_data = []
